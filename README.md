@@ -61,7 +61,7 @@ What the server (`com.vivo.services.rrm.RefreshRateAdjuster`) checks:
 
 ## Compatibility
 
-Tested on one vivo phone: 1440×3168 panel with 60 / 90 / 120 / 144 Hz,
+Tested on one vivo phone: iQOO 15 Ultra 1440×3168 panel with 60 / 90 / 120 / 144 Hz,
 `RefreshRateAdjuster` SDK 230409. Other models should work if
 `./vivo-rms.sh modes` lists the rate and `adb shell service list` shows
 `rms: [com.vivo.rms.IRM]`. If not, pull `/system/framework/vivo-services.jar`

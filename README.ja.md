@@ -48,7 +48,7 @@ vivo のフレームワーク（`com.vivo.rms.common.RefreshRateRequester`）は
 
 ## 対応機種
 
-検証したのは vivo 端末1台です（1440×3168 パネル、60/90/120/144Hz、`RefreshRateAdjuster` SDK 230409）。
+検証したのは vivo 端末1台です（iQOO 15 Ultra、1440×3168 パネル、60/90/120/144Hz、`RefreshRateAdjuster` SDK 230409）。
 
 他の機種でも、`./vivo-rms.sh modes` に目的のレートが表示され、`adb shell service list` に `rms: [com.vivo.rms.IRM]` があれば動く見込みです。動かない場合は `/system/framework/vivo-services.jar` を取り出し、`RMNative.onTransact` を上の表と比べてください。
 

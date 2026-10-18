@@ -23,8 +23,9 @@ vivo スマホ（OriginOS / Funtouch OS）のリフレッシュレートを、ro
 Windows では `vivo-rms.cmd` を同じコマンドで使います（実行ポリシーを変えずに `vivo-rms.ps1` を実行します）。
 
 ```bat
-vivo-rms.cmd set 144
-vivo-rms.cmd release 0 900001
+.\vivo-rms.cmd modes
+.\vivo-rms.cmd set 144
+.\vivo-rms.cmd release 0 900001
 ```
 
 固定は解除するか再起動するまで続きます。`hold <fps>` を使うと、Ctrl-C を押したときに自動で解除されます。
@@ -55,7 +56,7 @@ vivo のフレームワーク（`com.vivo.rms.common.RefreshRateRequester`）は
 
 ## 対応機種
 
-検証したのは vivo 端末1台です（iQOO 15 Ultra、1440×3168 パネル、60/90/120/144Hz、`RefreshRateAdjuster` SDK 230409）。
+検証したのは vivo 端末2台です（iQOO 15 Ultra 144Hz、iQOO Pad Ultra 165Hz）。
 
 他の機種でも、`./vivo-rms.sh modes` に目的のレートが表示され、`adb shell service list` に `rms: [com.vivo.rms.IRM]` があれば動く見込みです。動かない場合は `/system/framework/vivo-services.jar` を取り出し、`RMNative.onTransact` を上の表と比べてください。
 

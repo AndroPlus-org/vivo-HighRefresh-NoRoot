@@ -27,8 +27,8 @@ On Windows, use `vivo-rms.cmd` with the same commands (it runs
 `vivo-rms.ps1` without touching the execution policy):
 
 ```bat
-vivo-rms.cmd set 144
-vivo-rms.cmd release 0 900001
+.\vivo-rms.cmd set 144
+.\vivo-rms.cmd release 0 900001
 ```
 
 The vote stays until it is released or the phone reboots. `hold <fps>` votes
@@ -69,16 +69,13 @@ What the server (`com.vivo.services.rrm.RefreshRateAdjuster`) checks:
 
 ## Compatibility
 
-Tested on one vivo phone: iQOO 15 Ultra 1440×3168 panel with 60 / 90 / 120 / 144 Hz,
-`RefreshRateAdjuster` SDK 230409. Other models should work if
-`./vivo-rms.sh modes` lists the rate and `adb shell service list` shows
-`rms: [com.vivo.rms.IRM]`. If not, pull `/system/framework/vivo-services.jar`
-and compare `RMNative.onTransact` with the table above.
+Tested on one vivo devices: iQOO 15 Ultra 144Hz, iQOO Pad Ultra 165Hz. 
+Other models should work if `./vivo-rms.sh modes` lists the rate and `adb shell service list` shows `rms: [com.vivo.rms.IRM]`. 
+If not, pull `/system/framework/vivo-services.jar` and compare `RMNative.onTransact` with the table above.
 
 ## Disclaimer
 
-**Use at your own risk.** This drives the display through an undocumented
-vendor interface. Expect more battery drain and heat.
+**Use at your own risk.** This drives the display through an undocumented vendor interface. Expect more battery drain and heat.
 
 ## License
 

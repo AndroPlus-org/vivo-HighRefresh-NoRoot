@@ -7,7 +7,7 @@ vivo スマホ（OriginOS / Funtouch OS）のリフレッシュレートを、ro
 ## 必要なもの
 
 - adb（USB またはワイヤレスデバッグ）
-- bash（Linux、macOS、WSL、Git Bash、Termux のいずれか）
+- bash（Linux、macOS、WSL、Git Bash、Termux のいずれか）、または Windows の PowerShell
 - dex を自分でビルドし直す場合のみ：JDK 17 と Android SDK build-tools の `d8`（ビルド済みの `RmsVote.dex` を同梱しています）
 
 ## 使い方
@@ -18,6 +18,13 @@ vivo スマホ（OriginOS / Funtouch OS）のリフレッシュレートを、ro
 ./vivo-rms.sh get            # 現在のレート（例: rate=144.0）
 ./vivo-rms.sh reason         # 採用中の要求（例: RmsVote|144）
 ./vivo-rms.sh release 0 900001   # 元に戻す
+```
+
+Windows では `vivo-rms.cmd` を同じコマンドで使います（実行ポリシーを変えずに `vivo-rms.ps1` を実行します）。
+
+```bat
+vivo-rms.cmd set 144
+vivo-rms.cmd release 0 900001
 ```
 
 固定は解除するか再起動するまで続きます。`hold <fps>` を使うと、Ctrl-C を押したときに自動で解除されます。

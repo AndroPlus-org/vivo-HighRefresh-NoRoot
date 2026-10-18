@@ -9,7 +9,7 @@ Magisk, no bootloader unlock.
 ## Requirements
 
 - adb (USB or wireless debugging)
-- bash (Linux, macOS, WSL, Git Bash or Termux)
+- bash (Linux, macOS, WSL, Git Bash or Termux), or PowerShell on Windows
 - To rebuild the dex only: JDK 17 and `d8` from Android SDK build-tools.
   A prebuilt `RmsVote.dex` is included.
 
@@ -21,6 +21,14 @@ Magisk, no bootloader unlock.
 ./vivo-rms.sh get            # current rate, e.g. rate=144.0
 ./vivo-rms.sh reason         # the request the vendor applies, e.g. RmsVote|144
 ./vivo-rms.sh release 0 900001   # undo
+```
+
+On Windows, use `vivo-rms.cmd` with the same commands (it runs
+`vivo-rms.ps1` without touching the execution policy):
+
+```bat
+vivo-rms.cmd set 144
+vivo-rms.cmd release 0 900001
 ```
 
 The vote stays until it is released or the phone reboots. `hold <fps>` votes

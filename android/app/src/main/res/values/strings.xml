@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name" translatable="false">vivo HiHz</string>
+    <string name="rate_button">%d Hz</string>
+    <string name="release">Release (back to automatic)</string>
+    <string name="apply_on_boot">Apply again after reboot</string>
+    <string name="unreachable">The rms service is not reachable from this app on this build.</string>
+    <string name="status_current">Current: %.1f Hz</string>
+    <string name="status_pinned">Pinned: %d Hz</string>
+    <string name="status_not_pinned">Pinned: none</string>
+    <string name="status_reason">Applied request: %s</string>
+</resources>

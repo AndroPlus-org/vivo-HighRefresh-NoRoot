@@ -3,17 +3,36 @@
 [日本語](README.ja.md)
 
 Rootless high refresh rate for vivo phones (OriginOS / Funtouch OS). Pins the
-panel at 144 Hz — or 165 Hz on panels that have it — over adb. No root, no
-Magisk, no bootloader unlock.
+panel at 144 Hz — or 165 Hz on panels that have it — from an app or over adb.
+No root, no Magisk, no bootloader unlock.
 
-## Requirements
+## App (vivo HiHz)
+
+### [Download the latest APK](https://github.com/AndroPlus-org/vivo-HighRefresh-NoRoot/releases/latest)
+
+The easiest way. It needs no adb, no Shizuku and no special permission.
+
+1. Install the APK and open **vivo HiHz**.
+2. Tap a rate. Only the rates the panel offers are listed.
+3. Tap **Release (back to automatic)** to undo.
+
+With **Apply again after reboot** on (the default), the app pins the same
+rate again after the phone restarts. The screen shows the current rate, the
+pinned rate and the request the vendor applies. English and Japanese.
+
+Every release is built on GitHub Actions and signed with the same key, so a
+new version installs over the old one.
+
+## Command line
+
+### Requirements
 
 - adb (USB or wireless debugging)
 - bash (Linux, macOS, WSL, Git Bash or Termux), or PowerShell on Windows
 - To rebuild the dex only: JDK 17 and `d8` from Android SDK build-tools.
   A prebuilt `RmsVote.dex` is included.
 
-## Usage
+### Usage
 
 ```bash
 ./vivo-rms.sh modes          # rates the panel offers, and vendor limits
@@ -67,9 +86,15 @@ What the server (`com.vivo.services.rrm.RefreshRateAdjuster`) checks:
 - system_server numbers its own requests from handle 1 under the same caller,
   so the default handle is 900001 to stay clear of them.
 
+An ordinary app can look up the `rms` binder too (`ServiceManager.getService`
+through reflection), and since the server checks no uid and `caller` 0 makes
+the vote system_server's, the app sends the same Parcel without any
+permission. The vote is kept in memory only, so the app votes again on
+`BOOT_COMPLETED`.
+
 ## Compatibility
 
-Tested on one vivo devices: iQOO 15 Ultra 144Hz, iQOO Pad Ultra 165Hz. 
+Tested on two vivo devices: iQOO 15 Ultra 144Hz, iQOO Pad Ultra 165Hz. 
 Other models should work if `./vivo-rms.sh modes` lists the rate and `adb shell service list` shows `rms: [com.vivo.rms.IRM]`. 
 If not, pull `/system/framework/vivo-services.jar` and compare `RMNative.onTransact` with the table above.
 

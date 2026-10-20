@@ -2,15 +2,31 @@
 
 [English](README.md)
 
-vivo スマホ（OriginOS / Funtouch OS）のリフレッシュレートを、root なしで 144Hz（対応パネルなら 165Hz）に固定します。adb だけで動き、root・Magisk・ブートローダーアンロックは不要です。
+vivo スマホ（OriginOS / Funtouch OS）のリフレッシュレートを、root なしで 144Hz（対応パネルなら 165Hz）に固定します。アプリか adb のどちらでも使え、root・Magisk・ブートローダーアンロックは不要です。
 
-## 必要なもの
+## アプリ（vivo HiHz）
+
+### [最新の APK をダウンロード](https://github.com/AndroPlus-org/vivo-HighRefresh-NoRoot/releases/latest)
+
+いちばん簡単な方法です。adb も Shizuku も特別な権限も要りません。
+
+1. APK をインストールして **vivo HiHz** を開きます。
+2. 固定したいレートをタップします。パネルが対応しているレートだけが表示されます。
+3. 元に戻すときは **解除（自動に戻す）** をタップします。
+
+**再起動後も自動で適用する** をオン（初期設定）にしておくと、端末を再起動したあとも同じレートを自動で固定し直します。画面には現在のレート、固定中のレート、採用中の要求が表示されます。表示は日本語と英語に対応しています。
+
+リリースはすべて GitHub Actions でビルドし同じ鍵で署名しているので、新しいバージョンをそのまま上書きインストールできます。
+
+## コマンドライン
+
+### 必要なもの
 
 - adb（USB またはワイヤレスデバッグ）
 - bash（Linux、macOS、WSL、Git Bash、Termux のいずれか）、または Windows の PowerShell
 - dex を自分でビルドし直す場合のみ：JDK 17 と Android SDK build-tools の `d8`（ビルド済みの `RmsVote.dex` を同梱しています）
 
-## 使い方
+### 使い方
 
 ```bash
 ./vivo-rms.sh modes          # パネルが対応するレートとベンダーの制限
@@ -53,6 +69,8 @@ vivo のフレームワーク（`com.vivo.rms.common.RefreshRateRequester`）は
 - 144Hz は「プライベート fps」（`persist.sys.private_fps`）扱いで、フラグ `2`（プライベート fps を使う）を付けたときだけ選ばれます。
 - 既定値はベンダーの adb 用経路に合わせています（シーン `FixRate`、優先度 100、フラグ `15`、ディスプレイ `-1`）。
 - system_server は同じ caller の下で自分の要求に handle 1 から番号を振るので、重ならないよう既定の handle を 900001 にしています。
+
+一般のアプリからも、リフレッシュレートの要求先（`rms` サービス）を取得できます（`ServiceManager.getService` をリフレクションで呼びます）。サーバーは UID を確認せず、`caller` が 0 なら system_server の要求として扱うので、アプリは権限なしで同じ Parcel を送れます。要求はメモリ上にしか残らないため、アプリは `BOOT_COMPLETED` を受け取ったときに送り直します。
 
 ## 対応機種
 

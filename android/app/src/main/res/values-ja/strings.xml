@@ -3,8 +3,10 @@
     <string name="rate_button">%d Hz</string>
     <string name="release">解除（自動に戻す）</string>
     <string name="apply_on_boot">再起動後も自動で適用する</string>
+    <string name="autostart_hint">再起動後に適用するには、vivo の設定でこのアプリの自動起動を許可する必要がある場合があります。</string>
+    <string name="open_autostart">自動起動を許可する</string>
     <string name="unreachable">この端末のシステムでは、アプリから rms サービスに接続できません。</string>
-    <string name="status_current">現在: %.1f Hz</string>
+    <string name="live_rate">%.1f Hz</string>
     <string name="status_pinned">固定: %d Hz</string>
     <string name="status_not_pinned">固定: なし</string>
     <string name="status_reason">採用中の要求: %s</string>

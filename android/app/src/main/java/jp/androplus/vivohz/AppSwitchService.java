@@ -9,8 +9,8 @@ import android.text.TextUtils;
 import android.view.accessibility.AccessibilityEvent;
 
 /**
- * Follows the app in front and re-votes when its per-app rate differs from
- * what is voted now. A pinned 165 Hz halves apps that cap themselves at 120
+ * Follows the app in front for {@link FrontApp}, when the user picked the
+ * accessibility watcher. A pinned 165 Hz halves apps that cap themselves at 120
  * fps (they land on 82.5), and outranks vivo's own per-app setting, so those
  * apps get a rate of their own or no vote at all.
  *
@@ -19,41 +19,23 @@ import android.view.accessibility.AccessibilityEvent;
  * app below them is still in front.
  */
 public class AppSwitchService extends AccessibilityService {
-    private String current;
-    /** What we voted last; -1 until the first switch. */
-    private int voted = -1;
-
     @Override
     protected void onServiceConnected() {
-        current = null;
-        voted = -1;
+        FrontApp.reset();
     }
 
     @Override
     public void onAccessibilityEvent(AccessibilityEvent event) {
         if (event.getEventType() != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) return;
+        // Left on while another watcher was picked: stay out of its way.
+        if (!FrontApp.WATCH_ACCESSIBILITY.equals(FrontApp.watch(this))) return;
         CharSequence pkg = event.getPackageName(), cls = event.getClassName();
         if (pkg == null || cls == null || !isActivity(pkg.toString(), cls.toString())) return;
-        current = pkg.toString();
-        apply();
+        FrontApp.moved(this, pkg.toString());
     }
 
     @Override
     public void onInterrupt() {
-    }
-
-    /**
-     * Votes for the app in front unless that is already voted. Votes made from
-     * MainActivity bypass {@link #voted}, but this app has no rule of its own,
-     * so they always match what it would vote here.
-     */
-    private void apply() {
-        if (current == null) return;
-        int fps = AppRates.target(this, current);
-        if (fps == voted) return;
-        if (fps > 0) Rms.vote(fps);
-        else Rms.release();
-        voted = fps;
     }
 
     private boolean isActivity(String pkg, String cls) {

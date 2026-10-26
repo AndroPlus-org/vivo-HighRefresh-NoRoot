@@ -15,5 +15,7 @@ public class BootReceiver extends BroadcastReceiver {
         if (fps > 0 && prefs.getBoolean(MainActivity.KEY_ON_BOOT, true)) {
             Rms.vote(fps);
         }
+        // The accessibility watcher comes back on its own; the others need their service.
+        WatchService.sync(context);
     }
 }

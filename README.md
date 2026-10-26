@@ -29,14 +29,25 @@ and give it a rate of its own (e.g. 120 Hz), or **Automatic (no pin)** to drop
 the pin while it is in front, so the app and vivo's per-app setting decide
 again. Apps left at **Follow the pinned rate** keep the pin.
 
-Switching needs the app's accessibility service (**vivo HiHz per-app rates**),
-which only learns which app is in front and reads no window content. Turn it
-on from the button in the screen. On Android 13 and later, a sideloaded app's
-accessibility service may be greyed out at first: open the app's info page,
-tap ⋮ and choose **Allow restricted settings**, then turn it on.
+Switching needs a way to see which app is in front. Pick one under **How to
+see the app in front**:
 
-Every release is built on GitHub Actions and signed with the same key, so a
-new version installs over the old one.
+- **Accessibility service** (recommended): the app's accessibility service
+  (**vivo HiHz per-app rates**) only learns which app is in front and reads no
+  window content. The system keeps it running. On Android 13 and later, a
+  sideloaded app's accessibility service may be greyed out at first: open the
+  app's info page, tap ⋮ and choose **Allow restricted settings**, then turn
+  it on.
+- **Usage access**: allow vivo HiHz under usage access. It checks the app in
+  front every second while the screen is on, so a switch can lag by up to a
+  second.
+- **Shizuku**: with [Shizuku](https://shizuku.rikka.app/) running, allow vivo
+  HiHz in it. The app registers a process observer with the activity manager,
+  so switches arrive as they happen. Once registered it keeps working if
+  Shizuku stops, but after a reboot Shizuku has to be started again.
+
+Usage access and Shizuku run as a foreground service with a notification, so
+vivo does not kill them.
 
 ## Command line
 

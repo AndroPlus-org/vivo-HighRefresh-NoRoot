@@ -13,7 +13,7 @@
     <string name="app_rates">アプリごとのレート</string>
     <string name="app_rates_hint">120fps が上限のアプリは、165Hz に固定すると半分の 82.5fps になります。こうしたアプリには個別のレートを設定するか、「自動」にしてアプリと vivo のアプリ別設定に任せます。</string>
     <string name="service_on">アプリ切り替え: オン</string>
-    <string name="service_off">アプリ切り替え: オフ。ユーザー補助の設定で vivo HiHz をオンにすると、前面のアプリに合わせてレートを切り替えます。</string>
+    <string name="service_off">アプリ切り替え: オフ。ユーザー補助の設定で vivo HiHz をオンにすると、前面のアプリに合わせてレートを切り替えます。グレーアウトしている場合は、先にアプリ情報の︙から「制限付き設定を許可」を選びます。</string>
     <string name="open_accessibility">ユーザー補助の設定を開く</string>
     <string name="search_apps">アプリを検索</string>
     <string name="rule_default">固定レートに従う</string>

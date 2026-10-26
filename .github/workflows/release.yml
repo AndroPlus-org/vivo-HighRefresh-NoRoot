@@ -1,9 +1,16 @@
 name: Release APK
 
 # Push a tag like v0.1.0 to build a signed APK and publish it as a release.
+# Or run it from the Actions tab: it builds the chosen branch and tags that
+# commit with the given version.
 on:
   push:
     tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Version tag to create, e.g. v0.3.0"
+        required: true
 
 permissions:
   contents: write
@@ -14,10 +21,24 @@ jobs:
     defaults:
       run:
         working-directory: android
+    env:
+      TAG: ${{ inputs.tag || github.ref_name }}
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      - name: Check tag
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          case "$TAG" in v[0-9]*) ;; *) echo "::error::Tag must look like v0.3.0, got '$TAG'"; exit 1 ;; esac
+          # A tag already on another commit would publish an APK that does not match it.
+          if existing=$(git rev-parse -q --verify "refs/tags/$TAG^{commit}"); then
+            if [ "$existing" != "$GITHUB_SHA" ]; then
+              echo "::error::$TAG already points at $existing, not $GITHUB_SHA. Delete the tag or pick a new version."
+              exit 1
+            fi
+          fi
 
       - uses: actions/setup-java@v4
         with:
@@ -35,10 +56,9 @@ jobs:
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-          # v0.1.0 -> 0.1.0; the commit count keeps versionCode rising.
-          VERSION_NAME: ${{ github.ref_name }}
         run: |
-          export VERSION_NAME="${VERSION_NAME#v}"
+          # v0.1.0 -> 0.1.0; the commit count keeps versionCode rising.
+          export VERSION_NAME="${TAG#v}"
           export VERSION_CODE="$(git rev-list --count HEAD)"
           chmod +x gradlew
           ./gradlew --no-daemon assembleRelease
@@ -52,7 +72,8 @@ jobs:
       - name: Publish release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "$GITHUB_REF_NAME" "$RUNNER_TEMP"/vivo-hihz-*.apk --generate-notes --title "$GITHUB_REF_NAME"
+        # --target creates the tag on this commit when it does not exist yet.
+        run: gh release create "$TAG" "$RUNNER_TEMP"/vivo-hihz-*.apk --target "$GITHUB_SHA" --generate-notes --title "$TAG"
 
       - name: Remove keystore
         if: always()

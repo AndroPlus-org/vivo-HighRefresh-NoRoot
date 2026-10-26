@@ -93,7 +93,7 @@ public class MainActivity extends Activity {
             Button b = button(getString(R.string.rate_button, fps));
             b.setEnabled(reachable);
             b.setOnClickListener(v -> {
-                Rms.vote(fps);
+                Rms.vote(this, fps);
                 prefs.edit().putInt(KEY_FPS, fps).apply();
                 refresh();
             });

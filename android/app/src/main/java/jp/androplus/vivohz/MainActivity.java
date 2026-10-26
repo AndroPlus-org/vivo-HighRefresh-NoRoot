@@ -89,7 +89,7 @@ public class MainActivity extends Activity {
             root.addView(err);
         }
 
-        for (int fps : panelRates()) {
+        for (int fps : panelRates(getDisplay())) {
             Button b = button(getString(R.string.rate_button, fps));
             b.setEnabled(reachable);
             b.setOnClickListener(v -> {
@@ -108,6 +108,11 @@ public class MainActivity extends Activity {
             refresh();
         });
         root.addView(release);
+
+        Button perApp = button(getString(R.string.app_rates));
+        perApp.setEnabled(reachable);
+        perApp.setOnClickListener(v -> startActivity(new Intent(this, AppRatesActivity.class)));
+        root.addView(perApp);
 
         CheckBox onBoot = new CheckBox(this);
         onBoot.setText(R.string.apply_on_boot);
@@ -155,9 +160,8 @@ public class MainActivity extends Activity {
     }
 
     /** The panel's own modes, highest first; only those can be pinned. */
-    private TreeSet<Integer> panelRates() {
+    static TreeSet<Integer> panelRates(Display display) {
         TreeSet<Integer> rates = new TreeSet<>((a, b) -> b - a);
-        Display display = getDisplay();
         if (display != null) {
             for (Display.Mode m : display.getSupportedModes()) {
                 rates.add(Math.round(m.getRefreshRate()));

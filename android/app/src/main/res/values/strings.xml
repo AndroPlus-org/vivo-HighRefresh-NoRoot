@@ -11,4 +11,14 @@
     <string name="status_pinned">Pinned: %d Hz</string>
     <string name="status_not_pinned">Pinned: none</string>
     <string name="status_reason">Applied request: %s</string>
+    <string name="app_rates">Per-app rates</string>
+    <string name="app_rates_hint">Apps that cap themselves at 120 fps run at half the pinned rate on a 165 Hz pin (82.5 fps). Give such apps a rate of their own, or Automatic to leave them to the app and vivo\'s own per-app setting.</string>
+    <string name="service_on">App switching: on</string>
+    <string name="service_off">App switching: off. Turn on vivo HiHz in the accessibility settings so the rate follows the app in front. If it is greyed out, open this app\'s info page, tap ⋮ and allow restricted settings first.</string>
+    <string name="open_accessibility">Open accessibility settings</string>
+    <string name="search_apps">Search apps</string>
+    <string name="rule_default">Follow the pinned rate</string>
+    <string name="rule_auto">Automatic (no pin)</string>
+    <string name="service_label">vivo HiHz per-app rates</string>
+    <string name="service_description">Sees which app is in front, and nothing else, to switch to the refresh rate set for it in vivo HiHz. No window content is read.</string>
 </resources>

@@ -20,6 +20,21 @@ With **Apply again after reboot** on (the default), the app pins the same
 rate again after the phone restarts. The screen shows the current rate, the
 pinned rate and the request the vendor applies. English and Japanese.
 
+### Per-app rates
+
+A game or video app that caps itself at 120 fps runs at half the pinned rate
+on a 165 Hz pin (82.5 fps), and the pin also outranks vivo's own per-app
+setting. **Per-app rates** fixes that without turning the pin off: pick an app
+and give it a rate of its own (e.g. 120 Hz), or **Automatic (no pin)** to drop
+the pin while it is in front, so the app and vivo's per-app setting decide
+again. Apps left at **Follow the pinned rate** keep the pin.
+
+Switching needs the app's accessibility service (**vivo HiHz per-app rates**),
+which only learns which app is in front and reads no window content. Turn it
+on from the button in the screen. On Android 13 and later, a sideloaded app's
+accessibility service may be greyed out at first: open the app's info page,
+tap ⋮ and choose **Allow restricted settings**, then turn it on.
+
 Every release is built on GitHub Actions and signed with the same key, so a
 new version installs over the old one.
 

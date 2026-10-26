@@ -62,5 +62,6 @@ dependencies {
     // Optional watcher for the app in front; the accessibility one needs neither.
     implementation("dev.rikka.shizuku:api:13.1.5")
     implementation("dev.rikka.shizuku:provider:13.1.5")
-    implementation("org.lsposed.hiddenapibypass:hiddenapibypass:6.2")
+    // 6.2 requires compileSdk 37, beyond what AGP 9.0 supports.
+    implementation("org.lsposed.hiddenapibypass:hiddenapibypass:6.1")
 }

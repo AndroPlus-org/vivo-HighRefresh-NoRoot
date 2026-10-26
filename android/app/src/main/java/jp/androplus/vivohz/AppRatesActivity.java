@@ -1,5 +1,6 @@
 package jp.androplus.vivohz;
 
+import android.Manifest;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Intent;
@@ -7,6 +8,8 @@ import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.graphics.Insets;
 import android.graphics.Typeface;
+import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.text.Editable;
@@ -20,10 +23,13 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ListView;
+import android.widget.RadioButton;
+import android.widget.RadioGroup;
 import android.widget.TextView;
 import java.text.Collator;
 import java.util.ArrayList;
 import java.util.List;
+import rikka.shizuku.Shizuku;
 
 /** Lists launchable apps; tapping one picks the rate it gets while in front. */
 public class AppRatesActivity extends Activity {
@@ -37,12 +43,21 @@ public class AppRatesActivity extends Activity {
         }
     }
 
+    private static final String[] WATCHES = {
+            FrontApp.WATCH_ACCESSIBILITY, FrontApp.WATCH_USAGE, FrontApp.WATCH_SHIZUKU};
+    private static final int[] WATCH_LABELS = {
+            R.string.watch_accessibility, R.string.watch_usage, R.string.watch_shizuku};
+    private static final int REQUEST_SHIZUKU = 1;
+
     private final List<App> all = new ArrayList<>();
     private final List<App> shown = new ArrayList<>();
     private int[] rates;
     private TextView serviceState;
     private Button serviceButton;
     private EditText filter;
+    private boolean askedNotifications;
+    private final Shizuku.OnRequestPermissionResultListener shizukuResult =
+            (requestCode, grantResult) -> refreshWatch();
     private Adapter adapter;
 
     @Override
@@ -66,15 +81,32 @@ public class AppRatesActivity extends Activity {
         hint.setText(R.string.app_rates_hint);
         root.addView(hint);
 
+        TextView watchLabel = new TextView(this);
+        watchLabel.setText(R.string.watch_label);
+        watchLabel.setPadding(0, pad / 2, 0, 0);
+        root.addView(watchLabel);
+
+        RadioGroup watchGroup = new RadioGroup(this);
+        String current = FrontApp.watch(this);
+        for (int i = 0; i < WATCHES.length; i++) {
+            RadioButton rb = new RadioButton(this);
+            rb.setId(i + 1);
+            rb.setText(WATCH_LABELS[i]);
+            rb.setChecked(WATCHES[i].equals(current));
+            watchGroup.addView(rb);
+        }
+        watchGroup.setOnCheckedChangeListener((group, id) -> {
+            FrontApp.setWatch(this, WATCHES[id - 1]);
+            refreshWatch();
+        });
+        root.addView(watchGroup);
+
         serviceState = new TextView(this);
-        serviceState.setPadding(0, pad / 2, 0, 0);
         root.addView(serviceState);
 
         serviceButton = new Button(this);
         serviceButton.setAllCaps(false);
-        serviceButton.setText(R.string.open_accessibility);
-        serviceButton.setOnClickListener(v ->
-                startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)));
+        serviceButton.setOnClickListener(v -> fixWatch());
         root.addView(serviceButton);
 
         filter = new EditText(this);
@@ -110,6 +142,7 @@ public class AppRatesActivity extends Activity {
             return WindowInsets.CONSUMED;
         });
         setContentView(root);
+        Shizuku.addRequestPermissionResultListener(shizukuResult);
 
         // Labels take a while to load with many apps installed.
         new Thread(() -> {
@@ -124,9 +157,77 @@ public class AppRatesActivity extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
-        boolean on = AppSwitchService.enabled(this);
-        serviceState.setText(on ? R.string.service_on : R.string.service_off);
-        serviceButton.setVisibility(on ? View.GONE : View.VISIBLE);
+        refreshWatch();
+    }
+
+    @Override
+    protected void onDestroy() {
+        Shizuku.removeRequestPermissionResultListener(shizukuResult);
+        super.onDestroy();
+    }
+
+    /** Shows whether the picked watcher can see the app in front, and what to do if not. */
+    private void refreshWatch() {
+        String watch = FrontApp.watch(this);
+        int state, action = 0;
+        if (FrontApp.WATCH_USAGE.equals(watch)) {
+            boolean on = WatchService.usageGranted(this);
+            state = on ? R.string.usage_on : R.string.usage_off;
+            if (!on) action = R.string.open_usage_access;
+        } else if (FrontApp.WATCH_SHIZUKU.equals(watch)) {
+            if (WatchService.shizukuGranted()) {
+                state = R.string.shizuku_on;
+            } else if (shizukuRunning()) {
+                state = R.string.shizuku_no_permission;
+                action = R.string.grant_shizuku;
+            } else {
+                state = R.string.shizuku_not_running;
+            }
+        } else {
+            boolean on = AppSwitchService.enabled(this);
+            state = on ? R.string.service_on : R.string.service_off;
+            if (!on) action = R.string.open_accessibility;
+        }
+        serviceState.setText(state);
+        serviceButton.setVisibility(action != 0 ? View.VISIBLE : View.GONE);
+        if (action != 0) serviceButton.setText(action);
+        // Keeps the foreground service running in step with the choice, and
+        // lets it pick up a permission granted while we were away.
+        WatchService.sync(this);
+        if (!FrontApp.WATCH_ACCESSIBILITY.equals(watch)) askForNotifications();
+    }
+
+    private void fixWatch() {
+        String watch = FrontApp.watch(this);
+        if (FrontApp.WATCH_USAGE.equals(watch)) {
+            startActivity(new Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS,
+                    Uri.fromParts("package", getPackageName(), null)));
+        } else if (FrontApp.WATCH_SHIZUKU.equals(watch)) {
+            try {
+                Shizuku.requestPermission(REQUEST_SHIZUKU);
+            } catch (Throwable t) {
+                refreshWatch();
+            }
+        } else {
+            startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS));
+        }
+    }
+
+    private static boolean shizukuRunning() {
+        try {
+            return Shizuku.pingBinder();
+        } catch (Throwable t) {
+            return false;
+        }
+    }
+
+    /** The foreground service's notification is hidden on Android 13+ until this is allowed. */
+    private void askForNotifications() {
+        if (Build.VERSION.SDK_INT >= 33 && !askedNotifications
+                && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+            askedNotifications = true;
+            requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS}, 0);
+        }
     }
 
     private List<App> loadApps() {

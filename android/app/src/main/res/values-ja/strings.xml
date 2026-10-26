@@ -20,4 +20,17 @@
     <string name="rule_auto">自動（固定しない）</string>
     <string name="service_label">vivo HiHz アプリごとのレート</string>
     <string name="service_description">前面にあるアプリを知るためだけに使い、そのアプリに vivo HiHz で設定したレートへ切り替えます。画面の内容は読み取りません。</string>
+    <string name="watch_label">前面アプリの検出方法</string>
+    <string name="watch_accessibility">ユーザー補助（おすすめ）</string>
+    <string name="watch_usage">使用状況へのアクセス（1秒ごとに確認）</string>
+    <string name="watch_shizuku">Shizuku</string>
+    <string name="usage_on">使用状況へのアクセス: 許可済み</string>
+    <string name="usage_off">使用状況へのアクセス: 未許可。vivo HiHz を許可してください。</string>
+    <string name="open_usage_access">使用状況へのアクセスの設定を開く</string>
+    <string name="shizuku_on">Shizuku: 接続済み</string>
+    <string name="shizuku_no_permission">Shizuku: 起動中ですが、vivo HiHz がまだ許可されていません。</string>
+    <string name="shizuku_not_running">Shizuku: 起動していません。Shizuku アプリで起動してください。再起動後は Shizuku を起動し直す必要があります。</string>
+    <string name="grant_shizuku">Shizuku で許可する</string>
+    <string name="watch_channel">アプリごとのレート</string>
+    <string name="watch_notification">前面のアプリに合わせてレートを切り替え中</string>
 </resources>

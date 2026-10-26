@@ -58,4 +58,9 @@ android {
     }
 }
 
-dependencies {}
+dependencies {
+    // Optional watcher for the app in front; the accessibility one needs neither.
+    implementation("dev.rikka.shizuku:api:13.1.5")
+    implementation("dev.rikka.shizuku:provider:13.1.5")
+    implementation("org.lsposed.hiddenapibypass:hiddenapibypass:6.2")
+}

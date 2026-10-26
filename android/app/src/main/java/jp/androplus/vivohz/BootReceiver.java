@@ -13,7 +13,7 @@ public class BootReceiver extends BroadcastReceiver {
         SharedPreferences prefs = context.getSharedPreferences(MainActivity.PREFS, Context.MODE_PRIVATE);
         int fps = prefs.getInt(MainActivity.KEY_FPS, 0);
         if (fps > 0 && prefs.getBoolean(MainActivity.KEY_ON_BOOT, true)) {
-            Rms.vote(fps);
+            Rms.vote(context, fps);
         }
         // The accessibility watcher comes back on its own; the others need their service.
         WatchService.sync(context);

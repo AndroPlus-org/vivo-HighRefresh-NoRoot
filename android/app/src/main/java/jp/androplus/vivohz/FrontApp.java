@@ -48,7 +48,7 @@ final class FrontApp {
         current = pkg;
         int fps = AppRates.target(context, pkg);
         if (fps == voted) return;
-        if (fps > 0) Rms.vote(fps);
+        if (fps > 0) Rms.vote(context, fps);
         else Rms.release();
         voted = fps;
     }

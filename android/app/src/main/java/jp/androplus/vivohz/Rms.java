@@ -1,5 +1,7 @@
 package jp.androplus.vivohz;
 
+import android.content.Context;
+import android.content.SharedPreferences;
 import android.os.IBinder;
 import android.os.Parcel;
 import android.util.Log;
@@ -17,8 +19,13 @@ final class Rms {
     private static final String TAG = "VivoHz";
     private static final int TX_RELEASE = 24, TX_GET = 26, TX_ACQUIRE_V2 = 31;
 
-    /** system_server numbers its own votes from 1 under caller 0; stay clear. */
+    /**
+     * system_server numbers its own votes from 1 under caller 0; stay clear.
+     * Votes use this handle or the next one, see {@link #vote}.
+     */
     static final long HANDLE = 900001;
+    /** The handle holding our vote, in {@link MainActivity#PREFS}. */
+    private static final String KEY_HANDLE = "handle";
     /** FLAG_USE_OWN_CONFIG_BITS | USE_PRIVATE_FPS | USE_VSYNC_DFPS | IGNORE_BRIGHTNESS, as the vendor's adb path. */
     private static final int FLAGS = 15;
     private static final int PRIORITY = 100;
@@ -37,13 +44,21 @@ final class Rms {
         }
     }
 
-    /** Votes {@code fps} in the FixRate scene; voting again with the same handle replaces it. */
-    static boolean vote(int fps) {
+    /**
+     * Votes {@code fps} in the FixRate scene. The server ignores an acquire
+     * for a handle that already holds a vote, and a release sent just before
+     * an acquire can land after it, so votes alternate between two handles:
+     * the new one goes in first, then the old one is dropped.
+     */
+    static boolean vote(Context context, int fps) {
         IBinder b = binder();
         if (b == null) return false;
+        SharedPreferences prefs = prefs(context);
+        long old = prefs.getLong(KEY_HANDLE, HANDLE);
+        long handle = old == HANDLE ? HANDLE + 1 : HANDLE;
         Parcel d = Parcel.obtain();
         try {
-            d.writeLong(HANDLE);
+            d.writeLong(handle);
             d.writeString("FixRate");
             d.writeString("VivoHz");
             d.writeInt(-1);        // reqDisplay: all
@@ -59,22 +74,30 @@ final class Rms {
             d.writeInt(FLAGS);
             d.writeInt(0);         // arg1
             d.writeInt(0);         // arg2
-            return b.transact(TX_ACQUIRE_V2, d, null, IBinder.FLAG_ONEWAY);
+            if (!b.transact(TX_ACQUIRE_V2, d, null, IBinder.FLAG_ONEWAY)) return false;
         } catch (Throwable t) {
             Log.w(TAG, "vote failed", t);
             return false;
         } finally {
             d.recycle();
         }
+        prefs.edit().putLong(KEY_HANDLE, handle).apply();
+        release(b, old);
+        return true;
     }
 
+    /** Drops our vote, whichever handle holds it. */
     static boolean release() {
         IBinder b = binder();
         if (b == null) return false;
+        return release(b, HANDLE) & release(b, HANDLE + 1);
+    }
+
+    private static boolean release(IBinder b, long handle) {
         Parcel d = Parcel.obtain();
         try {
             d.writeInt(0);
-            d.writeLong(HANDLE);
+            d.writeLong(handle);
             return b.transact(TX_RELEASE, d, null, IBinder.FLAG_ONEWAY);
         } catch (Throwable t) {
             Log.w(TAG, "release failed", t);
@@ -82,6 +105,10 @@ final class Rms {
         } finally {
             d.recycle();
         }
+    }
+
+    private static SharedPreferences prefs(Context context) {
+        return context.getSharedPreferences(MainActivity.PREFS, Context.MODE_PRIVATE);
     }
 
     /** The rate the vendor has applied, or 0 when the service can't be reached. */

@@ -22,7 +22,9 @@ import java.lang.reflect.Method;
  *       --scene <name>  (default FixRate, the scene the vendor's adb path uses)
  *       --prio <n>      priority inside the scene, -100..100 (default 100)
  *       --dur <n>       duration as the vendor reads it (default 0)
- *       --flags <n>     RefreshRateRequester FLAG_* bits (default 15, as adb)
+ *       --flags <n>     RefreshRateRequester FLAG_* bits (default 14: as adb
+ *                       minus USE_OWN_CONFIG_BITS, so the server picks the
+ *                       panel mode bits, e.g. honouring the PWM setting)
  *       --display <n>   display id (default -1: all)
  *       --handle <n>    vote handle (default 900001; system_server numbers its
  *                       own from 1 under the same caller, so stay clear)
@@ -85,7 +87,7 @@ public class RmsVote {
         boolean hold = args[0].equals("hold");
         int fps = Integer.parseInt(args[1]);
         String scene = "FixRate";
-        int prio = 100, dur = 0, flags = 15, display = -1, caller = 0;
+        int prio = 100, dur = 0, flags = 14, display = -1, caller = 0;
         long handle = 900001;
         boolean v1 = false;
         for (int i = 2; i < args.length; i++) {

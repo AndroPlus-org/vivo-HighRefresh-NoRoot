@@ -79,7 +79,7 @@ vivo のフレームワーク（`com.vivo.rms.common.RefreshRateRequester`）は
 - `caller` は AMS が管理しているプロセスである必要があります。shell から起動した `app_process` はこれに該当しないため、要求は何も返さずに捨てられます。
 - **`caller` に 0 以下を渡すと、system_server 自身の要求として扱われます**。ベンダー純正の `dumpsys rms --display --set-fps` も同じ方法を使っています。ただしこのコマンドは `persist.sys.rms.allow_dump` が必要で、shell からは設定できません。
 - 144Hz は「プライベート fps」（`persist.sys.private_fps`）扱いで、フラグ `2`（プライベート fps を使う）を付けたときだけ選ばれます。
-- 既定値はベンダーの adb 用経路に合わせています（シーン `FixRate`、優先度 100、フラグ `15`、ディスプレイ `-1`）。
+- 既定値はベンダーの adb 用経路に合わせています（シーン `FixRate`、優先度 100、ディスプレイ `-1`）。フラグだけは adb 経路の `15` ではなく `14` です。フラグ `1`（自前の config bits を使う）と config bits 0 の組み合わせではサーバーによるパネルモードの選択が飛ばされ、X300 では設定でオフにしていても全輝度高周波 PWM 調光が有効になるためです。
 - system_server は同じ caller の下で自分の要求に handle 1 から番号を振るので、重ならないよう既定の handle を 900001 にしています。
 
 一般のアプリからも、リフレッシュレートの要求先（`rms` サービス）を取得できます（`ServiceManager.getService` をリフレクションで呼びます）。サーバーは UID を確認せず、`caller` が 0 なら system_server の要求として扱うので、アプリは権限なしで同じ Parcel を送れます。要求はメモリ上にしか残らないため、アプリは `BOOT_COMPLETED` を受け取ったときに送り直します。

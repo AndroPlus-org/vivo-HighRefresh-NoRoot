@@ -108,7 +108,10 @@ What the server (`com.vivo.services.rrm.RefreshRateAdjuster`) checks:
   `persist.sys.rms.allow_dump`, which shell cannot set.
 - 144 Hz is a *private fps* (`persist.sys.private_fps`) and is only picked
   with flag `2` (use private fps). The defaults mirror the vendor's adb path:
-  scene `FixRate`, priority 100, flags `15`, display `-1`.
+  scene `FixRate`, priority 100, display `-1`, flags `14`. The adb path sends
+  `15`, but flag `1` (use own config bits) with config bits 0 skips the
+  server's own choice of panel mode, and on the X300 that turns on full PWM
+  dimming even when it is off in Settings.
 - system_server numbers its own requests from handle 1 under the same caller,
   so the default handle is 900001 to stay clear of them.
 

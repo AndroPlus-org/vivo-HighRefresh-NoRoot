@@ -26,8 +26,13 @@ final class Rms {
     static final long HANDLE = 900001;
     /** The handle holding our vote, in {@link MainActivity#PREFS}. */
     private static final String KEY_HANDLE = "handle";
-    /** FLAG_USE_OWN_CONFIG_BITS | USE_PRIVATE_FPS | USE_VSYNC_DFPS | IGNORE_BRIGHTNESS, as the vendor's adb path. */
-    private static final int FLAGS = 15;
+    /**
+     * FLAG_USE_PRIVATE_FPS | USE_VSYNC_DFPS | IGNORE_BRIGHTNESS. Unlike the
+     * vendor's adb path, no FLAG_USE_OWN_CONFIG_BITS: with it and configBits 0
+     * the server skips ConfigBitsManager and picks a panel mode with no bits,
+     * which on the X300 is the full-PWM one whatever the user set.
+     */
+    private static final int FLAGS = 14;
     private static final int PRIORITY = 100;
 
     private Rms() {

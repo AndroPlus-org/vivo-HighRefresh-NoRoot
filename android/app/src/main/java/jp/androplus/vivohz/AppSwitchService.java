@@ -44,7 +44,8 @@ public class AppSwitchService extends AccessibilityService {
             return;
         }
         CharSequence pkg = event.getPackageName(), cls = event.getClassName();
-        if (pkg == null || cls == null || !isActivity(pkg.toString(), cls.toString())) return;
+        if (pkg == null || cls == null || FrontApp.isCurrent(pkg.toString())
+                || !isActivity(pkg.toString(), cls.toString())) return;
         FrontApp.moved(this, pkg.toString());
     }
 
@@ -53,14 +54,27 @@ public class AppSwitchService extends AccessibilityService {
             | AccessibilityEvent.WINDOWS_CHANGE_FOCUSED
             | AccessibilityEvent.WINDOWS_CHANGE_ACTIVE;
 
+    /**
+     * The focused application window last looked up, and its package. Reading
+     * a window's root asks that app's UI thread, so a game would stall a frame
+     * each time an overlay, toast or notification comes and goes over it; a
+     * window keeps its id, so it is asked once.
+     */
+    private int focusedId = -1;
+    private String focusedPkg;
+
     /** The package of the focused application window, or null while none has focus. */
     private String focusedApp() {
         for (AccessibilityWindowInfo w : getWindows()) {
             if (w.getType() != AccessibilityWindowInfo.TYPE_APPLICATION || !w.isFocused()) continue;
+            if (w.getId() == focusedId) return focusedPkg;
             AccessibilityNodeInfo root = w.getRoot();
             if (root == null) return null;
             CharSequence pkg = root.getPackageName();
-            return pkg == null ? null : pkg.toString();
+            if (pkg == null) return null;
+            focusedId = w.getId();
+            focusedPkg = pkg.toString();
+            return focusedPkg;
         }
         return null;
     }

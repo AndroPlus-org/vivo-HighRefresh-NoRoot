@@ -20,7 +20,7 @@
     <string name="rule_default">Follow the pinned rate</string>
     <string name="rule_auto">Automatic (no pin)</string>
     <string name="service_label">vivo HiHz per-app rates</string>
-    <string name="service_description">Sees which app is in front, and nothing else, to switch to the refresh rate set for it in vivo HiHz. No window content is read.</string>
+    <string name="service_description">Sees which app is in front, and nothing else, to switch to the refresh rate set for it in vivo HiHz. Only which app owns each window is looked at; no window content is read.</string>
     <string name="watch_label">How to see the app in front</string>
     <string name="watch_accessibility">Accessibility service (recommended)</string>
     <string name="watch_usage">Usage access (checks every second)</string>

@@ -19,7 +19,7 @@
     <string name="rule_default">固定レートに従う</string>
     <string name="rule_auto">自動（固定しない）</string>
     <string name="service_label">vivo HiHz アプリごとのレート</string>
-    <string name="service_description">前面にあるアプリを知るためだけに使い、そのアプリに vivo HiHz で設定したレートへ切り替えます。画面の内容は読み取りません。</string>
+    <string name="service_description">前面にあるアプリを知るためだけに使い、そのアプリに vivo HiHz で設定したレートへ切り替えます。各ウィンドウがどのアプリのものかを見るだけで、画面の内容は読み取りません。</string>
     <string name="watch_label">前面アプリの検出方法</string>
     <string name="watch_accessibility">ユーザー補助（おすすめ）</string>
     <string name="watch_usage">使用状況へのアクセス（1秒ごとに確認）</string>

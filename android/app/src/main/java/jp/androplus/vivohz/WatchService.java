@@ -50,6 +50,12 @@ public class WatchService extends Service {
     private static final String CHANNEL = "watch";
     private static final int NOTIFICATION_ID = 1;
     private static final long POLL_MS = 1000;
+    /**
+     * Events are stamped when they happen but can be recorded a little later,
+     * so one stamped just before a query may only show up after it. Each poll
+     * reaches back this far; replaying an event already seen changes nothing.
+     */
+    private static final long OVERLAP_MS = 5000;
     private static final String OBSERVER = "android.app.IProcessObserver";
 
     private final Handler handler = new Handler(Looper.getMainLooper());
@@ -177,7 +183,8 @@ public class WatchService extends Service {
 
     private void pollUsage() {
         long now = System.currentTimeMillis();
-        UsageEvents events = getSystemService(UsageStatsManager.class).queryEvents(since, now);
+        UsageEvents events = getSystemService(UsageStatsManager.class)
+                .queryEvents(since - OVERLAP_MS, now);
         if (events == null) return;
         boolean changed = false;
         UsageEvents.Event e = new UsageEvents.Event();

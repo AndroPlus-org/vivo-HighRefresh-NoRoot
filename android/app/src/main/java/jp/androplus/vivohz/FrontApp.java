@@ -38,6 +38,11 @@ final class FrontApp {
         voted = -1;
     }
 
+    /** Whether {@code pkg} is already the app in front, so a watcher can skip looking further. */
+    static synchronized boolean isCurrent(String pkg) {
+        return pkg.equals(current);
+    }
+
     /**
      * {@code pkg} came to the front: vote its rate unless that is already
      * voted. Votes made from MainActivity bypass {@link #voted}, but this app

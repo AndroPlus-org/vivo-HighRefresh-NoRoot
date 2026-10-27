@@ -7,6 +7,8 @@ import android.content.pm.PackageManager;
 import android.provider.Settings;
 import android.text.TextUtils;
 import android.view.accessibility.AccessibilityEvent;
+import android.view.accessibility.AccessibilityNodeInfo;
+import android.view.accessibility.AccessibilityWindowInfo;
 
 /**
  * Follows the app in front for {@link FrontApp}, when the user picked the
@@ -17,6 +19,10 @@ import android.view.accessibility.AccessibilityEvent;
  * Only window changes that belong to an activity count: the notification
  * shade, keyboards and toasts also raise TYPE_WINDOW_STATE_CHANGED, and the
  * app below them is still in front.
+ *
+ * Closing a floating window hands focus back to the app below without a state
+ * change, so window-list changes also count: the focused application window
+ * is then the app in front.
  */
 public class AppSwitchService extends AccessibilityService {
     @Override
@@ -26,12 +32,37 @@ public class AppSwitchService extends AccessibilityService {
 
     @Override
     public void onAccessibilityEvent(AccessibilityEvent event) {
-        if (event.getEventType() != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) return;
+        int type = event.getEventType();
+        if (type != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED
+                && type != AccessibilityEvent.TYPE_WINDOWS_CHANGED) return;
         // Left on while another watcher was picked: stay out of its way.
         if (!FrontApp.WATCH_ACCESSIBILITY.equals(FrontApp.watch(this))) return;
+        if (type == AccessibilityEvent.TYPE_WINDOWS_CHANGED) {
+            if ((event.getWindowChanges() & WINDOW_MOVES) == 0) return;
+            String pkg = focusedApp();
+            if (pkg != null) FrontApp.moved(this, pkg);
+            return;
+        }
         CharSequence pkg = event.getPackageName(), cls = event.getClassName();
         if (pkg == null || cls == null || !isActivity(pkg.toString(), cls.toString())) return;
         FrontApp.moved(this, pkg.toString());
+    }
+
+    private static final int WINDOW_MOVES = AccessibilityEvent.WINDOWS_CHANGE_ADDED
+            | AccessibilityEvent.WINDOWS_CHANGE_REMOVED
+            | AccessibilityEvent.WINDOWS_CHANGE_FOCUSED
+            | AccessibilityEvent.WINDOWS_CHANGE_ACTIVE;
+
+    /** The package of the focused application window, or null while none has focus. */
+    private String focusedApp() {
+        for (AccessibilityWindowInfo w : getWindows()) {
+            if (w.getType() != AccessibilityWindowInfo.TYPE_APPLICATION || !w.isFocused()) continue;
+            AccessibilityNodeInfo root = w.getRoot();
+            if (root == null) return null;
+            CharSequence pkg = root.getPackageName();
+            return pkg == null ? null : pkg.toString();
+        }
+        return null;
     }
 
     @Override

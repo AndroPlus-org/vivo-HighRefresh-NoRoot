@@ -24,6 +24,8 @@ import android.os.Process;
 import android.util.Log;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import org.lsposed.hiddenapibypass.HiddenApiBypass;
 import rikka.shizuku.Shizuku;
 import rikka.shizuku.ShizukuBinderWrapper;
@@ -38,6 +40,10 @@ import rikka.shizuku.SystemServiceHelper;
  * registers a process observer with the activity manager as shell (which
  * holds SET_ACTIVITY_WATCHER); the observer is our own binder, so it keeps
  * working after Shizuku stops, until this process dies.
+ *
+ * Both keep every app still in front, not just the last to arrive: closing a
+ * floating window brings no new arrival, only the floating app leaving, and
+ * the app below is then the latest one left.
  */
 public class WatchService extends Service {
     private static final String TAG = "VivoHz";
@@ -51,6 +57,8 @@ public class WatchService extends Service {
 
     // Usage access.
     private long since;
+    /** Resumed activities ("pkg/cls"), latest last. */
+    private final ArrayList<String> resumed = new ArrayList<>();
     private final Runnable poll = new Runnable() {
         @Override
         public void run() {
@@ -74,19 +82,22 @@ public class WatchService extends Service {
      * from the framework's own stub.
      */
     private volatile int txForegroundActivities = -1;
+    /** IProcessObserver.onProcessDied(int pid, int uid). */
+    private volatile int txProcessDied = -1;
     private final Binder observer = new Binder() {
         @Override
         protected boolean onTransact(int code, Parcel data, Parcel reply, int flags) {
-            if (code != txForegroundActivities) return true;
+            if (code != txForegroundActivities && code != txProcessDied) return true;
             data.enforceInterface(OBSERVER);
-            data.readInt(); // pid
+            int pid = data.readInt();
             int uid = data.readInt();
-            boolean foreground = data.readInt() != 0;
-            // The app leaving the front is followed by the next one arriving.
-            if (foreground) handler.post(() -> foregroundUid(uid));
+            boolean foreground = code == txForegroundActivities && data.readInt() != 0;
+            handler.post(() -> foregroundChanged(pid, uid, foreground));
             return true;
         }
     };
+    /** Processes with activities in front, pid to uid, latest last. Main thread only. */
+    private final LinkedHashMap<Integer, Integer> foregroundPids = new LinkedHashMap<>();
     private final Shizuku.OnBinderReceivedListener shizukuUp = this::registerObserver;
 
     /** Starts or stops this service to match the watcher the user picked. */
@@ -157,6 +168,7 @@ public class WatchService extends Service {
 
     private void startUsage() {
         since = System.currentTimeMillis() - 10_000;
+        resumed.clear();
         IntentFilter f = new IntentFilter(Intent.ACTION_SCREEN_ON);
         f.addAction(Intent.ACTION_SCREEN_OFF);
         registerReceiver(screen, f);
@@ -167,13 +179,24 @@ public class WatchService extends Service {
         long now = System.currentTimeMillis();
         UsageEvents events = getSystemService(UsageStatsManager.class).queryEvents(since, now);
         if (events == null) return;
-        String front = null;
+        boolean changed = false;
         UsageEvents.Event e = new UsageEvents.Event();
         while (events.getNextEvent(e)) {
-            if (e.getEventType() == UsageEvents.Event.ACTIVITY_RESUMED) front = e.getPackageName();
+            int type = e.getEventType();
+            String key = e.getPackageName() + "/" + e.getClassName();
+            if (type == UsageEvents.Event.ACTIVITY_RESUMED) {
+                resumed.remove(key);
+                resumed.add(key);
+                changed = true;
+            } else if (type == UsageEvents.Event.ACTIVITY_PAUSED
+                    || type == UsageEvents.Event.ACTIVITY_STOPPED) {
+                changed |= resumed.remove(key);
+            }
         }
         since = now;
-        if (front != null) FrontApp.moved(this, front);
+        if (!changed || resumed.isEmpty()) return;
+        String front = resumed.get(resumed.size() - 1);
+        FrontApp.moved(this, front.substring(0, front.indexOf('/')));
     }
 
     private void registerObserver() {
@@ -184,7 +207,11 @@ public class WatchService extends Service {
             Field tx = stub.getDeclaredField("TRANSACTION_onForegroundActivitiesChanged");
             tx.setAccessible(true);
             txForegroundActivities = tx.getInt(null);
+            Field died = stub.getDeclaredField("TRANSACTION_onProcessDied");
+            died.setAccessible(true);
+            txProcessDied = died.getInt(null);
             Object proxy = stub.getMethod("asInterface", IBinder.class).invoke(null, observer);
+            foregroundPids.clear();
             invokeAm("registerProcessObserver", proxy);
             observerProxy = proxy;
         } catch (Throwable t) {
@@ -210,6 +237,24 @@ public class WatchService extends Service {
                 .getMethod("asInterface", IBinder.class).invoke(null, am);
         Method m = iam.getClass().getMethod(name, Class.forName(OBSERVER));
         m.invoke(iam, proxy);
+    }
+
+    /**
+     * An app leaving the front is usually followed by the next one arriving,
+     * which then wins. When nothing arrives, as when a floating window closes,
+     * the latest process still in front is the app in front.
+     */
+    private void foregroundChanged(int pid, int uid, boolean foreground) {
+        boolean was = foregroundPids.remove(pid) != null;
+        if (foreground) {
+            foregroundPids.put(pid, uid);
+            foregroundUid(uid);
+            return;
+        }
+        if (!was) return;
+        Integer latest = null;
+        for (Integer u : foregroundPids.values()) latest = u;
+        if (latest != null) foregroundUid(latest);
     }
 
     /** Shared uids map to several packages; prefer one with a launcher entry. */

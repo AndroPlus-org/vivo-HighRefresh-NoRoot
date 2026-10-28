@@ -108,10 +108,14 @@ What the server (`com.vivo.services.rrm.RefreshRateAdjuster`) checks:
   `persist.sys.rms.allow_dump`, which shell cannot set.
 - 144 Hz is a *private fps* (`persist.sys.private_fps`) and is only picked
   with flag `2` (use private fps). The defaults mirror the vendor's adb path:
-  scene `FixRate`, priority 100, display `-1`, flags `14`. The adb path sends
-  `15`, but flag `1` (use own config bits) with config bits 0 skips the
-  server's own choice of panel mode, and on the X300 that turns on full PWM
-  dimming even when it is off in Settings.
+  scene `FixRate`, display `-1`, priority `-1`, flags `14`. The adb path
+  sends priority 100 and flags `15`. FixRate spans 104900–105100 and is above
+  every other scene either way, but a vote at 105000 or more "needs more
+  modes": the server then stops keeping to the DC1P modes (config bit `2048`)
+  that turning full PWM dimming off in Settings asks for, and picks a mode
+  with no bits, so on the X300 full PWM came on with any fixed rate. Without
+  flag `1` (use own config bits) the server's ConfigBitsManager may still pick
+  bits for the mode.
 - system_server numbers its own requests from handle 1 under the same caller,
   so the default handle is 900001 to stay clear of them.
 

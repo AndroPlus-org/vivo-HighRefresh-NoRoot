@@ -7,6 +7,7 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.app.usage.UsageEvents;
+import android.app.usage.UsageEventsQuery;
 import android.app.usage.UsageStatsManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -15,6 +16,7 @@ import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.content.pm.ServiceInfo;
 import android.os.Binder;
+import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
@@ -51,6 +53,12 @@ public class WatchService extends Service {
     private static final int NOTIFICATION_ID = 1;
     private static final long POLL_MS = 1000;
     /**
+     * Each poll that finds the same app in front waits a second longer, up to
+     * this; a game held for minutes is asked about a third as often, and
+     * leaving it is noticed this late at worst.
+     */
+    private static final long POLL_MAX_MS = 3000;
+    /**
      * Events are stamped when they happen but can be recorded a little later,
      * so one stamped just before a query may only show up after it. Each poll
      * reaches back this far; replaying an event already seen changes nothing.
@@ -63,19 +71,29 @@ public class WatchService extends Service {
 
     // Usage access.
     private long since;
+    private long pollDelay = POLL_MS;
+    /** The package last handed to {@link FrontApp#moved}, from usage events. */
+    private String usageFront;
+    /**
+     * Whether to ask the server for activity events only (Android 15+), so it
+     * leaves out notifications, config changes and the like; cleared if that
+     * query fails, to fall back to reading everything.
+     */
+    private boolean filterEvents = true;
     /** Resumed activities ("pkg/cls"), latest last. */
     private final ArrayList<String> resumed = new ArrayList<>();
     private final Runnable poll = new Runnable() {
         @Override
         public void run() {
-            pollUsage();
-            handler.postDelayed(this, POLL_MS);
+            pollDelay = pollUsage() ? POLL_MS : Math.min(pollDelay + POLL_MS, POLL_MAX_MS);
+            handler.postDelayed(this, pollDelay);
         }
     };
     private final BroadcastReceiver screen = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
             handler.removeCallbacks(poll);
+            pollDelay = POLL_MS;
             if (Intent.ACTION_SCREEN_ON.equals(intent.getAction())) handler.post(poll);
         }
     };
@@ -175,35 +193,59 @@ public class WatchService extends Service {
     private void startUsage() {
         since = System.currentTimeMillis() - 10_000;
         resumed.clear();
+        usageFront = null;
+        pollDelay = POLL_MS;
         IntentFilter f = new IntentFilter(Intent.ACTION_SCREEN_ON);
         f.addAction(Intent.ACTION_SCREEN_OFF);
         registerReceiver(screen, f);
         if (getSystemService(PowerManager.class).isInteractive()) handler.post(poll);
     }
 
-    private void pollUsage() {
+    /** Reads the events since the last poll; true when another app came to the front. */
+    private boolean pollUsage() {
         long now = System.currentTimeMillis();
-        UsageEvents events = getSystemService(UsageStatsManager.class)
-                .queryEvents(since - OVERLAP_MS, now);
-        if (events == null) return;
+        UsageEvents events = queryEvents(since - OVERLAP_MS, now);
+        if (events == null) return false;
         boolean changed = false;
         UsageEvents.Event e = new UsageEvents.Event();
         while (events.getNextEvent(e)) {
             int type = e.getEventType();
-            String key = e.getPackageName() + "/" + e.getClassName();
             if (type == UsageEvents.Event.ACTIVITY_RESUMED) {
+                String key = e.getPackageName() + "/" + e.getClassName();
                 resumed.remove(key);
                 resumed.add(key);
                 changed = true;
             } else if (type == UsageEvents.Event.ACTIVITY_PAUSED
                     || type == UsageEvents.Event.ACTIVITY_STOPPED) {
-                changed |= resumed.remove(key);
+                changed |= resumed.remove(e.getPackageName() + "/" + e.getClassName());
             }
         }
         since = now;
-        if (!changed || resumed.isEmpty()) return;
+        if (!changed || resumed.isEmpty()) return false;
         String front = resumed.get(resumed.size() - 1);
-        FrontApp.moved(this, front.substring(0, front.indexOf('/')));
+        String pkg = front.substring(0, front.indexOf('/'));
+        // Replayed events (see OVERLAP_MS) keep finding the same app.
+        if (pkg.equals(usageFront)) return false;
+        usageFront = pkg;
+        FrontApp.moved(this, pkg);
+        return true;
+    }
+
+    private UsageEvents queryEvents(long begin, long end) {
+        UsageStatsManager usm = getSystemService(UsageStatsManager.class);
+        if (filterEvents && Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+            try {
+                return usm.queryEvents(new UsageEventsQuery.Builder(begin, end)
+                        .setEventTypes(UsageEvents.Event.ACTIVITY_RESUMED,
+                                UsageEvents.Event.ACTIVITY_PAUSED,
+                                UsageEvents.Event.ACTIVITY_STOPPED)
+                        .build());
+            } catch (Throwable t) {
+                Log.w(TAG, "filtered queryEvents failed", t);
+                filterEvents = false;
+            }
+        }
+        return usm.queryEvents(begin, end);
     }
 
     private void registerObserver() {

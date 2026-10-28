@@ -31,7 +31,8 @@ function Build {
     try {
         & javac -nowarn --release 8 -d $tmp (Join-Path $PSScriptRoot 'RmsVote.java')
         if ($LASTEXITCODE -ne 0) { Die 'javac failed' }
-        $classes = Get-ChildItem -Path $tmp -Filter 'RmsVote*.class' | ForEach-Object { $_.FullName }
+        # @() keeps a single class an array; splatting a lone string passes its characters
+        $classes = @(Get-ChildItem -Path $tmp -Filter 'RmsVote*.class' | ForEach-Object { $_.FullName })
         & d8 --release --min-api 26 --output $tmp @classes
         if ($LASTEXITCODE -ne 0) { Die 'd8 failed' }
         Move-Item -Force (Join-Path $tmp 'classes.dex') $LocalDex

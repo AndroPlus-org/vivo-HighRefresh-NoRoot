@@ -28,12 +28,18 @@ final class Rms {
     private static final String KEY_HANDLE = "handle";
     /**
      * FLAG_USE_PRIVATE_FPS | USE_VSYNC_DFPS | IGNORE_BRIGHTNESS. Unlike the
-     * vendor's adb path, no FLAG_USE_OWN_CONFIG_BITS: with it and configBits 0
-     * the server skips ConfigBitsManager and picks a panel mode with no bits,
-     * which on the X300 is the full-PWM one whatever the user set.
+     * vendor's adb path, no FLAG_USE_OWN_CONFIG_BITS, so ConfigBitsManager
+     * may still pick bits for the mode.
      */
     private static final int FLAGS = 14;
-    private static final int PRIORITY = 100;
+    /**
+     * Inside the FixRate scene (105000 +- 100), below 105000 but still above
+     * every other scene. A vote at 105000 or more "needs more modes"
+     * (RefreshRateRequest.isNeedMoreModes): findDisplayMode then stops
+     * keeping to the DC1P modes (config bit 2048) that full PWM off in
+     * Settings asks for, and takes a mode with no bits, which is full PWM.
+     */
+    private static final int PRIORITY = -1;
 
     private Rms() {
     }
